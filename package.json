@@ -39,8 +39,8 @@
     "node": "npx hardhat node",
     "test": "npx hardhat test",
     "complie": "npx hardhat compile",
-    "deploy-local": "npx hardhat run --network localhost scripts/deploy.ts",
-    "deploy-dev": "npx hardhat run --network ropsten scripts/deploy.ts"
+    "deploy:local": "npx hardhat run --network localhost scripts/deploy.ts",
+    "deploy:dev": "npx hardhat run --network ropsten scripts/deploy.ts"
   },
   "devDependencies": {
     "typescript": "^4.7.4"

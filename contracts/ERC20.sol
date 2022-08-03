@@ -277,7 +277,7 @@ contract ERC20 is IERC20, Pausable {
         }
     }
 
-    function _decreaseApproval(address spender, uint amount) public returns (bool) {
+    function _decreaseApproval(address spender, uint amount) internal returns (bool) {
         address owner = msg.sender;
 
         uint oldValue = _allowances[owner][spender];
