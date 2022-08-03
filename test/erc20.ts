@@ -4,7 +4,7 @@ import { ethers } from "hardhat";
 import BigNumber from "bignumber.js";
 
 const infoERC20 = {
-  totalSupply: 100000000000000000000000, // 100000
+  totalSupply: 1000000000 * 1e18, // 1B
   name: "Token Kelvin Jess",
   symbol: "TKJ",
   decimals: 18,
@@ -124,6 +124,31 @@ describe("ERC20", function () {
       const balanceOfUser1 = await erc20.balanceOf(user1.address);
       expect(new BigNumber(balanceOfUser1.toString()).toString(10)).to.equal(
         parseNumberToUnit(10, 18)
+      );
+    });
+  });
+
+  describe("ERC20 Pause", function () {
+    it("Pause", async function () {
+      const { erc20 } = await loadFixture(deployContract);
+
+      const totalSupply = await erc20.totalSupply();
+
+      // Pause
+      await erc20.pause();
+      try {
+        await erc20.burn(ethers.utils.parseEther("10").toString());
+      } catch (err) {
+        console.log("\t ERC20 paused");
+      }
+
+      await erc20.unpause();
+      await erc20.burn(ethers.utils.parseEther("10").toString());
+
+      const totalSupplyAfterPause = await erc20.totalSupply();
+
+      expect(parseInt(totalSupplyAfterPause.toString(), 10)).to.lessThan(
+        parseInt(totalSupply.toString(), 10)
       );
     });
   });

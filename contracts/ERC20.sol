@@ -4,6 +4,29 @@ pragma solidity ^0.8.10;
 
 interface IERC20 {
 
+    function name() external view returns (string memory);
+
+    function symbol() external view returns (string memory);
+
+    function decimals() external view returns (uint8);
+
+    function totalSupply() external view returns (uint256);
+
+    function balanceOf(address account) external view returns (uint256);
+
+    function transfer(address to, uint256 amount) external returns (bool);
+
+    function transferFrom(address from, address to, uint256 amount ) external returns (bool);
+
+    function mint(uint256 amount) external returns (bool);
+
+    function burn(uint256 amount) external returns (bool);
+
+    function allowance(address owner, address spender) external view returns (uint256);
+
+    function approve(address spender, uint256 amount) external returns (bool);
+
+
     event Transfer(address indexed from, address indexed to, uint256 value);
 
     event Approval(
@@ -13,7 +36,84 @@ interface IERC20 {
     );
 }
 
-contract ERC20 is IERC20 {
+interface IPausable {
+
+    event Pause();
+
+    event Unpause();
+
+    event NotPausable();
+}
+
+interface IOwnable {
+
+    event OwnershipRenounced(address indexed previousOwner);
+
+    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
+}
+
+contract Ownable is IOwnable {
+    address public owner;
+
+    constructor() {
+        owner = msg.sender;
+    }
+
+    modifier onlyOwner() {
+        require(msg.sender == owner);
+        _;
+    }
+
+    function transferOwnership(address newOwner) public onlyOwner {
+        require(newOwner != address(0));
+        emit OwnershipTransferred(owner, newOwner);
+        owner = newOwner;
+    }
+
+    function renounceOwnership() public onlyOwner {
+        emit OwnershipRenounced(owner);
+        owner = address(0);
+    }
+}
+
+contract Pausable is IPausable, Ownable {
+
+    bool public paused = false;
+    bool public canPause = true;
+
+    modifier whenNotPaused() {
+        // require(!paused || msg.sender == owner);
+        require(!paused); // For test
+        _;
+    }
+
+    modifier whenPaused() {
+        require(paused);
+        _;
+    }
+
+    function pause() onlyOwner whenNotPaused public {
+        require(canPause == true);
+        paused = true;
+        emit Pause();
+    }
+
+    function unpause() onlyOwner whenPaused public {
+        require(paused == true);
+        paused = false;
+        emit Unpause();
+    }
+
+    function notPausable() onlyOwner public{
+        paused = false;
+        canPause = false;
+        emit NotPausable();
+    }
+}
+
+contract ERC20 is IERC20, Pausable {
+    using SafeMath for uint256;
+
     mapping(address => uint256) private _balances;
 
     mapping(address => mapping(address => uint256)) private _allowances;
@@ -28,71 +128,80 @@ contract ERC20 is IERC20 {
         _symbol = "TKJ";
         _name = "Token Kelvin Jess";
         _decimals = 18;
-        _totalSupply = 100000000000000000000000;
+        _totalSupply = 1000000000 * 1e18;
         _balances[msg.sender] = _totalSupply;
         _admin = msg.sender;
         emit Transfer(address(0), msg.sender, _totalSupply);
     }
-
   
-    function name() public view  returns (string memory) {
+    function name() public view override  returns (string memory) {
         return _name;
     }
 
-    function symbol() public view  returns (string memory) {
+    function symbol() public view override  returns (string memory) {
         return _symbol;
     }
 
-    function decimals() public view  returns (uint8) {
+    function decimals() public view override  returns (uint8) {
         return _decimals;
     }
 
-    function totalSupply() public view   returns (uint256) {
+    function totalSupply() public view override returns (uint256) {
         return _totalSupply;
     }
 
-    function balanceOf(address account) public view returns (uint256) {
+    function balanceOf(address account) public view override returns (uint256) {
         return _balances[account];
     }
 
-    function mint(uint256 amount) public returns (bool) {
-        /*
-        anybody can mint token for test, if deploy please set require admint
-         */
-        
+    function mint(uint256 amount) public whenNotPaused override returns (bool) {
         address account = msg.sender;
         // require(account == _admin , "should are not admin so you can't min token");
-
         _mint(account, amount);
         return true;
     }
 
-    function burn(uint256 amount) public returns (bool) {
+    function burn(uint256 amount) public whenNotPaused override returns (bool) {
         address account = msg.sender;
         _burn(account, amount);
         return true;
     }
 
-    function transfer(address to, uint256 amount) public returns (bool) {
+    function transfer(address to, uint256 amount) public whenNotPaused override returns (bool) {
         address owner = msg.sender;
         _transfer(owner, to, amount);
         return true;
     }
 
-    function allowance(address owner, address spender) public view returns (uint256) {
+    function transferFrom(address from, address to, uint256 amount ) public whenNotPaused  returns (bool) {
+        address spender = msg.sender;
+        _spendAllowance(from, spender, amount);
+        _transfer(from, to, amount);
+        return true;
+    }
+
+    function allowance(address owner, address spender) public view override returns (uint256) {
         return _allowances[owner][spender];
     }
 
-    function approve(address spender, uint256 amount) public returns (bool) {
+    function approve(address spender, uint256 amount) public whenNotPaused override returns (bool) {
         address owner = msg.sender;
         _approve(owner, spender, amount);
         return true;
     }
 
-    function transferFrom(address from, address to, uint256 amount ) public returns (bool) {
-        address spender = msg.sender;
-        _spendAllowance(from, spender, amount);
-        _transfer(from, to, amount);
+    function increaseAllowance(address spender, uint256 amount) public whenNotPaused returns (bool) {
+        address owner = msg.sender;
+        _approve(owner, spender, _allowances[owner][spender] + amount);
+        return true;
+    }
+
+    function decreaseAllowance(address spender, uint amount) public whenNotPaused returns (bool success) {
+        address owner = msg.sender;
+        uint256 currentAllowance = _allowances[owner][spender];
+        require(currentAllowance >= amount, "ERC20: allowance is less than 0");
+
+         _approve(owner, spender, amount);
         return true;
     }
 
@@ -107,10 +216,9 @@ contract ERC20 is IERC20 {
             fromBalance >= amount,
             "ERC20: transfer amount exceeds balance"
         );
-        unchecked {
-            _balances[from] = fromBalance - amount;
-            _balances[to] += amount;
-        }
+
+        _balances[from] = fromBalance.sub(amount);
+        _balances[to] += amount;
 
         emit Transfer(from, to, amount);
 
@@ -139,7 +247,7 @@ contract ERC20 is IERC20 {
         uint256 accountBalance = _balances[account];
         require(accountBalance >= amount, "ERC20: burn amount exceeds balance");
         unchecked {
-            _balances[account] = accountBalance - amount;
+            _balances[account] = accountBalance.sub(amount);
             _totalSupply -= amount;
         }
 
@@ -169,7 +277,47 @@ contract ERC20 is IERC20 {
         }
     }
 
+    function _decreaseApproval(address spender, uint amount) public returns (bool) {
+        address owner = msg.sender;
+
+        uint oldValue = _allowances[owner][spender];
+        
+        if (amount > oldValue) {
+        _allowances[owner][spender] = 0;
+        } else {
+        _allowances[owner][spender] = oldValue.sub(amount);
+        }
+        
+        emit Approval(owner, spender, _allowances[owner][spender]);
+        return true;
+    }
+
     function _beforeTokenTransfer(address from, address to, uint256 amount) internal  {}
 
     function _afterTokenTransfer(address from, address to, uint256 amount ) internal  {}
+}
+
+library SafeMath {
+	
+	function mul(uint256 a, uint256 b) internal pure returns (uint256) {
+		uint256 c = a * b;
+		assert(a == 0 || c / a == b);
+		return c;
+	}
+
+	function div(uint256 a, uint256 b) internal pure returns (uint256) {
+		uint256 c = a / b;
+		return c;
+	}
+
+	function sub(uint256 a, uint256 b) internal pure returns (uint256) {
+		assert(b <= a);
+		return a - b;
+	}
+	
+	function add(uint256 a, uint256 b) internal pure returns (uint256 c) {
+		c = a + b;
+		assert(c >= a);
+		return c;
+	}
 }
