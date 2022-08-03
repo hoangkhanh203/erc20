@@ -21,7 +21,7 @@ const config: HardhatUserConfig = {
         },
       ],
     },
-    ropsten: {
+    testnet: {
       url: "https://ropsten.infura.io/v3/9aa3d95b3bc440fa88ea12eaa4456161",
       accounts: [
         "0x68c0cd8834ca2b6a3ec1ebec24952f675da5970b929da8731eac5118b123e797",
@@ -37,6 +37,11 @@ const config: HardhatUserConfig = {
     tests: "./test",
     cache: "./cache",
     artifacts: "./artifacts",
+  },
+  etherscan: {
+    apiKey: {
+      ropsten: "JKXR76EA1NK9XSKES1T2BNYBZ41T3BJ2JH",
+    },
   },
   solidity: {
     compilers: [

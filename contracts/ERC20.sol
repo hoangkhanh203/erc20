@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: MIT
-
 pragma solidity ^0.8.10;
 
 interface IERC20 {
@@ -64,13 +63,13 @@ contract Ownable is IOwnable {
         _;
     }
 
-    function transferOwnership(address newOwner) public onlyOwner {
+    function transferOwnership(address newOwner) private onlyOwner {
         require(newOwner != address(0));
         emit OwnershipTransferred(owner, newOwner);
         owner = newOwner;
     }
 
-    function renounceOwnership() public onlyOwner {
+    function renounceOwnership() private onlyOwner {
         emit OwnershipRenounced(owner);
         owner = address(0);
     }
@@ -78,8 +77,8 @@ contract Ownable is IOwnable {
 
 contract Pausable is IPausable, Ownable {
 
-    bool public paused = false;
-    bool public canPause = true;
+    bool private paused = false;
+    bool private canPause = true;
 
     modifier whenNotPaused() {
         // require(!paused || msg.sender == owner);
@@ -126,7 +125,7 @@ contract ERC20 is IERC20, Pausable {
 
     constructor() {
         _symbol = "TKJ";
-        _name = "Token Kelvin Jess";
+        _name = "Token Kelvin Jess 1234";
         _decimals = 18;
         _totalSupply = 1000000000 * 1e18;
         _balances[msg.sender] = _totalSupply;
@@ -190,13 +189,13 @@ contract ERC20 is IERC20, Pausable {
         return true;
     }
 
-    function increaseAllowance(address spender, uint256 amount) public whenNotPaused returns (bool) {
+    function increaseAllowance(address spender, uint256 amount) private whenNotPaused returns (bool) {
         address owner = msg.sender;
         _approve(owner, spender, _allowances[owner][spender] + amount);
         return true;
     }
 
-    function decreaseAllowance(address spender, uint amount) public whenNotPaused returns (bool success) {
+    function decreaseAllowance(address spender, uint amount) private whenNotPaused returns (bool success) {
         address owner = msg.sender;
         uint256 currentAllowance = _allowances[owner][spender];
         require(currentAllowance >= amount, "ERC20: allowance is less than 0");

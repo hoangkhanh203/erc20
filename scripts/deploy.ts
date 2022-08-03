@@ -4,10 +4,8 @@ async function main() {
   const [owner] = await ethers.getSigners();
 
   const ERC20 = await ethers.getContractFactory("ERC20");
-  console.log("start deploy");
   const erc20 = await ERC20.deploy();
   const erc20Deployed = await erc20.deployed();
-
   console.log("address Contract: ", erc20Deployed.address);
 }
 

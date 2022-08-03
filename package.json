@@ -38,9 +38,11 @@
   "scripts": {
     "node": "npx hardhat node",
     "test": "npx hardhat test",
-    "complie": "npx hardhat compile",
-    "deploy:local": "npx hardhat run --network localhost scripts/deploy.ts",
-    "deploy:dev": "npx hardhat run --network ropsten scripts/deploy.ts"
+    "clean": "npx hardhat clean",
+    "complie": "yarn run clean && npx hardhat compile",
+    "deploy:local": "yarn run complie && npx hardhat run --network localhost scripts/deploy.ts",
+    "deploy:dev": "yarn run complie && npx hardhat run --network testnet scripts/deploy.ts",
+    "verify:dev": "npx hardhat verify --contract contracts/ERC20.sol:ERC20 0xb7e69F42D7cD07f0FB27C045587727CcE6C01e0E --network testnet"
   },
   "devDependencies": {
     "typescript": "^4.7.4"
